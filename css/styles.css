@@ -1,0 +1,71 @@
+/* Fondo general */
+body {
+    background-color: #f8f9fa;
+    transition: background-color 0.4s ease;
+}
+
+/* Texto del resultado del backend */
+#resultado {
+    font-size: 2rem;
+    text-align: center;
+}
+
+/* Contenedor de imágenes o frases aleatorias */
+#imagenRandom img {
+    max-width: 300px;
+    border-radius: 10px;
+    margin-top: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    animation: aparecer 0.4s ease;
+}
+
+#imagenRandom div {
+    animation: aparecer 0.4s ease;
+}
+
+/* Animación suave al aparecer */
+@keyframes aparecer {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Botón misterioso */
+#botonMisterioso {
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+/* Efecto al hacer click */
+#botonMisterioso:active {
+    transform: scale(0.95);
+}
+/* El botón siempre por encima */
+#botonMisterioso {
+    position: absolute;
+    z-index: 9999;
+    transition: top 0.6s ease, left 0.6s ease, right 0.6s ease, bottom 0.6s ease;
+}
+
+/* Estela luminosa */
+#botonMisterioso::after {
+    content: "";
+    position: absolute;
+    width: 120%;
+    height: 120%;
+    top: -10%;
+    left: -10%;
+    border-radius: 50%;
+    background: radial-gradient(rgba(255,255,255,0.4), rgba(255,255,255,0));
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+
+/* Cuando se mueve, la estela aparece */
+#botonMisterioso.moving::after {
+    opacity: 1;
+}

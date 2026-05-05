@@ -1,8 +1,13 @@
 /* Fondo general */
 body {
-    background-color: #f8f9fa;
-    transition: background-color 0.4s ease;
+    background: transparent !important;
+    background-image: none !important;
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
 }
+
+
 
 /* Texto del resultado del backend */
 #resultado {

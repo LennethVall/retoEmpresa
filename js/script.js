@@ -43,14 +43,13 @@ function misterio() {
 // 28 fondos numerados (.jpg)
 function cambiarFondo() {
     const index = Math.floor(Math.random() * 28) + 1;
-    const url = `background/background${index}.jpg`;
+    const url = `/background/background${index}.jpg`;
 
     document.body.style.backgroundImage = `url('${url}')`;
     document.body.style.backgroundSize = "cover";
     document.body.style.backgroundPosition = "center";
 
-    // Aplicar contraste automático
-    aplicarContrasteAutomatico(url);
+    // Aplicar contraste automático   aplicarContrasteAutomatico(url);
 
     // Mover el botón cuando cambia el fondo
     moverBoton();

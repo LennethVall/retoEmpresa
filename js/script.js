@@ -43,13 +43,19 @@ function misterio() {
 // 28 fondos numerados (.jpg)
 function cambiarFondo() {
     const index = Math.floor(Math.random() * 28) + 1;
-    document.body.style.backgroundImage = `url('background/background${index}.jpg')`;
+    const url = `background/background${index}.jpg`;
+
+    document.body.style.backgroundImage = `url('${url}')`;
     document.body.style.backgroundSize = "cover";
     document.body.style.backgroundPosition = "center";
+
+    // Aplicar contraste automático
+    aplicarContrasteAutomatico(url);
 
     // Mover el botón cuando cambia el fondo
     moverBoton();
 }
+
 
 
 // 28 sonidos numerados (.mp3)
@@ -133,4 +139,54 @@ function moverBoton() {
     setTimeout(() => {
         boton.classList.remove("moving");
     }, 600);
+}
+function aplicarContrasteAutomatico(urlImagen) {
+    const img = new Image();
+    img.src = urlImagen;
+    img.crossOrigin = "anonymous";
+
+    img.onload = function () {
+        // Crear un canvas temporal para analizar la imagen
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+
+        canvas.width = img.width;
+        canvas.height = img.height;
+
+        ctx.drawImage(img, 0, 0);
+
+        // Obtener datos de píxeles
+        const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+
+        let r, g, b, avg;
+        let total = 0;
+
+        // Muestreo cada 20 píxeles para no saturar
+        for (let i = 0; i < data.length; i += 80) {
+            r = data[i];
+            g = data[i + 1];
+            b = data[i + 2];
+            avg = (r + g + b) / 3;
+            total += avg;
+        }
+
+        const luminosidad = total / (data.length / 80);
+
+        // Seleccionar estilo según luminosidad
+        const elementos = document.querySelectorAll("#contador, #resultado, #imagenRandom");
+
+        if (luminosidad < 128) {
+            // Fondo oscuro → texto claro
+            elementos.forEach(el => {
+                el.classList.remove("text-negro-borde-blanco");
+                el.classList.add("text-blanco-borde-negro");
+            });
+        } else {
+            // Fondo claro → texto oscuro
+            elementos.forEach(el => {
+                el.classList.remove("text-blanco-borde-negro");
+                el.classList.add("text-negro-borde-blanco");
+            });
+        }
+    };
 }

@@ -69,3 +69,20 @@ body {
 #botonMisterioso.moving::after {
     opacity: 1;
 }
+.text-blanco-borde-negro {
+    color: white !important;
+    text-shadow:
+            -2px -2px 0 black,
+            2px -2px 0 black,
+            -2px  2px 0 black,
+            2px  2px 0 black;
+}
+
+.text-negro-borde-blanco {
+    color: black !important;
+    text-shadow:
+            -2px -2px 0 white,
+            2px -2px 0 white,
+            -2px  2px 0 white,
+            2px  2px 0 white;
+}

@@ -1,41 +1,113 @@
-let usuario = null;
 
-window.onload = function () {
-    usuario = prompt("Introduce tu nombre:");
-    if (!usuario || usuario.trim() === "") {
-        usuario = "Anonimo";
-    }
-};
-
+// 1. VARIABLES GLOBALES (Arriba del todo)
+let tiempoUltimoEvento = Date.now();
+let usuario = "Anonimo";
 let clicks = 0;
 
+// Referencias a elementos del HTML
 const boton = document.getElementById("botonMisterioso");
 const contador = document.getElementById("contador");
 const resultado = document.getElementById("resultado");
 const imagenRandom = document.getElementById("imagenRandom");
+const panelResultados = document.getElementById("panelResultados"); // Asegúrate que este ID existe en tu HTML
+const contenidoPanel = document.getElementById("contenidoPanel");   // Asegúrate que este ID existe en tu HTML
 
-boton.addEventListener("click", misterio);
+// 2. INICIALIZACIÓN
+window.onload = function () {
+    usuario = prompt("Introduce tu nombre:") || "Anonimo";
+    console.log("Script listo para el usuario:", usuario);
+};
+
+// 3. LOGICA DEL BOTÓN
+if (boton) {
+    boton.addEventListener("click", misterio);
+}
 
 function misterio() {
     clicks++;
-    contador.innerText = clicks;
+    if (contador) contador.innerText = clicks;
 
     const acciones = [cambiarFondo, reproducirSonido, mostrarImagen, mostrarFrase];
-    const indiceAleatorio = Math.floor(Math.random() * acciones.length);
-    const accion = acciones[indiceAleatorio];
+    const accion = acciones[Math.floor(Math.random() * acciones.length)];
 
-    // Ejecutamos la acción
     accion();
-
-    // Registramos con detalles (por ejemplo, el índice del recurso que salió)
-    // El 'index' o nombre que uses en tus funciones (img1, sound5...) pásalo aquí
-    registrarEvento(accion.name, "Recurso aleatorio #" + clicks);
+    registrarEvento(accion.name, "Acción #" + clicks);
 
     cambiarColorBoton();
     moverBoton();
     animarBoton();
 }
 
+// 4. FUNCIÓN QUE HABLA CON KOTLIN (Crea la base de datos)
+function registrarEvento(nombreAccion, detalleEstimulo) {
+    const ahora = Date.now();
+    const tiempoReaccion = ahora - tiempoUltimoEvento;
+    tiempoUltimoEvento = ahora;
+
+    fetch("/log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            usuario: usuario,
+            evento: nombreAccion,
+            estimulo: detalleEstimulo,
+            tiempoReaccionMs: tiempoReaccion
+        })
+    })
+        .then(() => console.log("✅ Log guardado en Kotlin"))
+        .catch(err => console.error("❌ Error al conectar con servidor:", err));
+}
+
+// 5. MOVIMIENTO (Corregido para evitar el anclaje)
+function moverBoton() {
+    boton.classList.add("moving");
+    boton.style.transform = "none"; // Quita el 50% del CSS
+
+    const posiciones = [
+        { t: "20px", l: "20px", r: "auto", b: "auto" },
+        { t: "20px", r: "20px", l: "auto", b: "auto" },
+        { b: "20px", l: "20px", t: "auto", r: "auto" },
+        { b: "20px", r: "20px", t: "auto", l: "auto" }
+    ];
+
+    const pos = posiciones[Math.floor(Math.random() * posiciones.length)];
+
+    boton.style.top = pos.t;
+    boton.style.bottom = pos.b;
+    boton.style.left = pos.l;
+    boton.style.right = pos.r;
+
+    setTimeout(() => boton.classList.remove("moving"), 600);
+}
+
+// 6. INFORME (Corregido para que no se quede pensando)
+if (panelResultados) {
+    panelResultados.addEventListener('show.bs.offcanvas', () => {
+        if (contenidoPanel) contenidoPanel.innerHTML = "Cargando...";
+
+        fetch('/generar-informe')
+            .then(response => response.text())
+            .then(html => {
+                if (!contenidoPanel) return;
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const tablas = doc.querySelectorAll('table');
+
+                if (tablas.length > 0) {
+                    contenidoPanel.innerHTML = "";
+                    tablas.forEach(t => {
+                        t.classList.add('table-dark', 'table-sm', 'mt-3');
+                        contenidoPanel.appendChild(t.cloneNode(true));
+                    });
+                } else {
+                    contenidoPanel.innerHTML = "<p>No hay datos. ¡Pulsa el botón!</p>";
+                }
+            })
+            .catch(err => {
+                if (contenidoPanel) contenidoPanel.innerHTML = "Error: " + err;
+            });
+    });
+}
 
 function cambiarColorBoton() {
     const colores = [
@@ -56,28 +128,6 @@ function animarBoton() {
     setTimeout(() => {
         boton.style.transform = "scale(1)";
     }, 150);
-}
-
-function moverBoton() {
-    boton.classList.add("moving");
-
-    const posiciones = [
-        { top: "20px", left: "20px", right: "auto", bottom: "auto" },
-        { top: "20px", right: "20px", left: "auto", bottom: "auto" },
-        { bottom: "20px", left: "20px", top: "auto", right: "auto" },
-        { bottom: "20px", right: "20px", top: "auto", left: "auto" }
-    ];
-
-    const pos = posiciones[Math.floor(Math.random() * posiciones.length)];
-
-    boton.style.top = pos.top;
-    boton.style.bottom = pos.bottom;
-    boton.style.left = pos.left;
-    boton.style.right = pos.right;
-
-    setTimeout(() => {
-        boton.classList.remove("moving");
-    }, 600);
 }
 
 function cambiarFondo() {
@@ -239,67 +289,4 @@ function aplicarContrasteAutomatico(urlImagen) {
             });
         }
     };
-}
-function registrarEvento(evento) {
-    fetch("/log", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            usuario: usuario,
-            evento: evento
-        })
-    })
-        .then(r => console.log("Evento enviado:", evento))
-        .catch(err => console.error("Error enviando evento:", err));
-}
-const panelResultados = document.getElementById('panelResultados');
-const contenidoPanel = document.getElementById('contenidoPanel');
-
-// Cada vez que se abra el panel lateral
-panelResultados.addEventListener('show.bs.offcanvas', () => {
-    fetch('/generar-informe')
-        .then(response => response.text())
-        .then(html => {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-
-            // Buscamos solo las tablas o el contenido que nos interesa del informe XSLT
-            const tablas = doc.querySelectorAll('table');
-            if (tablas.length > 0) {
-                contenidoPanel.innerHTML = ""; // Limpiar spinner
-                tablas.forEach(t => {
-                    // Les damos un toque oscuro para que queden bien en el panel
-                    t.classList.add('table-dark', 'table-sm', 'mt-3');
-                    contenidoPanel.appendChild(t.cloneNode(true));
-                });
-            } else {
-                contenidoPanel.innerHTML = "<p>Todavía no hay registros. ¡Dale al botón!</p>";
-            }
-        })
-        .catch(err => {
-            contenidoPanel.innerHTML = `<p class="text-danger">Error conectando con Kotlin: ${err}</p>`;
-        });
-});
-let tiempoUltimoEvento = Date.now(); // Para medir el tiempo de reacción
-
-function registrarEvento(nombreAccion, detalleEstimulo) {
-    const ahora = Date.now();
-    const tiempoReaccion = ahora - tiempoUltimoEvento;
-    tiempoUltimoEvento = ahora; // Reset para el siguiente clic
-
-    fetch("/log", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            usuario: usuario,
-            evento: nombreAccion,
-            estimulo: detalleEstimulo,
-            tiempoReaccionMs: tiempoReaccion
-            // La fecha la puede poner Kotlin automáticamente
-        })
-    })
-        .then(r => console.log("Log guardado con éxito"))
-        .catch(err => console.error("Error al loguear:", err));
 }

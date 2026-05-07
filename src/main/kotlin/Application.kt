@@ -15,6 +15,20 @@ import java.nio.file.Files
 import java.nio.file.Paths
 
 fun main() {
+    fun main() {
+        // 1. Forzamos la creación de la estructura (la tabla)
+        LogService.registrarEvento(LogEvento("Sistema", "Inicio", "Prueba", 0))
+
+        // 2. Metemos un par de datos falsos para que el informe tenga algo que leer
+        LogService.registrarEvento(LogEvento("Pepe", "Clic", "Imagen1", 150))
+        LogService.registrarEvento(LogEvento("Maria", "Clic", "Sonido2", 300))
+
+        println("✅ Datos de prueba insertados. Deberías ver el archivo data.db ahora.")
+
+        embeddedServer(Netty, port = 8080) {
+            // ... tu configuración ...
+        }.start(wait = true)
+    }
     embeddedServer(Netty, port = 8080) {
         // Instalamos Jackson para que el POST funcione
         install(ContentNegotiation) {

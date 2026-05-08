@@ -16,12 +16,7 @@ import java.nio.file.Paths
 
 fun main() {
 
-    // 🔹 Datos de prueba (opcional)
-    LogService.registrarEvento(LogEvento("Sistema", "Inicio", "Prueba", 0))
-    LogService.registrarEvento(LogEvento("Pepe", "Clic", "Imagen1", 150))
-    LogService.registrarEvento(LogEvento("Maria", "Clic", "Sonido2", 300))
-
-    println("✅ Servidor iniciando...")
+    println("🚀 Iniciando servidor...")
 
     embeddedServer(Netty, port = 8080) {
 
@@ -34,33 +29,41 @@ fun main() {
             // =========================
             // 📦 ARCHIVOS ESTÁTICOS
             // =========================
-            staticFiles("/", File(".")) {
+            staticFiles("/", File("src/main/resources/public")) {
                 default("index.html")
             }
 
             // =========================
-            // 📊 REGISTRAR EVENTO
+            // 📩 REGISTRAR EVENTO
             // =========================
             post("/log") {
                 try {
                     val log = call.receive<LogEvento>()
                     LogService.registrarEvento(log)
 
-                    call.respond(HttpStatusCode.OK, "Evento registrado")
+                    call.respond(
+                        HttpStatusCode.OK,
+                        mapOf("message" to "Evento registrado")
+                    )
 
                 } catch (e: Exception) {
-                    call.respond(HttpStatusCode.BadRequest, "Error en el formato del log")
+                    call.respond(
+                        HttpStatusCode.BadRequest,
+                        mapOf("error" to "Formato de log inválido")
+                    )
                 }
             }
 
             // =========================
-            // 📈 ESTADÍSTICAS USUARIO
+            // 📊 ESTADÍSTICAS USUARIO
             // =========================
             get("/stats/{usuario}") {
-                val usuario = call.parameters["usuario"] ?: return@get call.respond(
-                    HttpStatusCode.BadRequest,
-                    "Usuario no válido"
-                )
+                val usuario = call.parameters["usuario"]
+
+                if (usuario == null) {
+                    call.respond(HttpStatusCode.BadRequest, "Usuario no válido")
+                    return@get
+                }
 
                 call.respond(LogService.obtenerEstadisticasUsuario(usuario))
             }
@@ -69,25 +72,28 @@ fun main() {
             // 🎯 MEJOR POR ESTÍMULO
             // =========================
             get("/stats/estimulos/{usuario}") {
-                val usuario = call.parameters["usuario"] ?: return@get call.respond(
-                    HttpStatusCode.BadRequest,
-                    "Usuario no válido"
-                )
+                val usuario = call.parameters["usuario"]
+
+                if (usuario == null) {
+                    call.respond(HttpStatusCode.BadRequest, "Usuario no válido")
+                    return@get
+                }
 
                 call.respond(LogService.mejorPorEstimulo(usuario))
             }
 
             // =========================
-            // 🏆 RANKING TOP 3
+            // 🏆 RANKING GLOBAL TOP 3
             // =========================
             get("/ranking") {
                 call.respond(LogService.rankingTop3())
             }
 
             // =========================
-            // 📄 GENERAR INFORME HTML
+            // 📄 GENERAR INFORME (XML + XSLT)
             // =========================
             get("/generar-informe") {
+
                 LogService.generarInformeHtml()
 
                 val file = File("informe_resultados.html")
@@ -103,9 +109,10 @@ fun main() {
             }
 
             // =========================
-            // 📄 VER XML
+            // 📄 VER XML (DEBUG)
             // =========================
             get("/ver-xml") {
+
                 val path = Paths.get("src/main/resources/data/eventos.xml")
 
                 if (Files.exists(path)) {
@@ -116,6 +123,13 @@ fun main() {
                 } else {
                     call.respond(HttpStatusCode.NotFound, "XML no encontrado")
                 }
+            }
+
+            // =========================
+            // ❤️ HEALTH CHECK
+            // =========================
+            get("/health") {
+                call.respond(mapOf("status" to "ok"))
             }
         }
 

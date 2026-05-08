@@ -4,8 +4,16 @@ import model.LogEvento
 import java.io.File
 import java.sql.Connection
 import java.sql.DriverManager
+import javax.xml.transform.TransformerFactory
+import javax.xml.transform.stream.StreamResult
 
 object LogService {
+
+    // =========================
+    // ARCHIVOS XML / XSLT
+    // =========================
+    private val xmlFile = File("src/main/resources/data/eventos.xml")
+    private val xsltFile = File("src/main/resources/data/xslt/resumen.xslt")
 
     // =========================
     // BASE DE DATOS
@@ -38,18 +46,22 @@ object LogService {
     // =========================
     fun registrarEvento(log: LogEvento) {
         conectar().use { conn ->
-            val sql = """
+            val stmt = conn.prepareStatement(
+                """
                 INSERT INTO logs (usuario, evento, estimulo, tiempoReaccionMs)
                 VALUES (?, ?, ?, ?)
-            """.trimIndent()
+                """.trimIndent()
+            )
 
-            val stmt = conn.prepareStatement(sql)
             stmt.setString(1, log.usuario)
             stmt.setString(2, log.evento)
             stmt.setString(3, log.estimulo)
             stmt.setLong(4, log.tiempoReaccionMs)
+
             stmt.executeUpdate()
         }
+
+        guardarEnXML(log)
     }
 
     // =========================
@@ -85,12 +97,7 @@ object LogService {
             }
         }
 
-        return mapOf(
-            "media" to 0,
-            "mejor" to 0,
-            "peor" to 0,
-            "clicks" to 0
-        )
+        return mapOf("media" to 0, "mejor" to 0, "peor" to 0, "clicks" to 0)
     }
 
     // =========================
@@ -124,7 +131,7 @@ object LogService {
     }
 
     // =========================
-    // 🏆 RANKING GLOBAL TOP 3
+    // 🏆 RANKING TOP 3
     // =========================
     fun rankingTop3(): List<Map<String, Any>> {
 
@@ -132,9 +139,7 @@ object LogService {
 
         conectar().use { conn ->
 
-            val stmt = conn.createStatement()
-
-            val rs = stmt.executeQuery(
+            val rs = conn.createStatement().executeQuery(
                 """
                 SELECT usuario, AVG(tiempoReaccionMs) as media
                 FROM logs
@@ -155,5 +160,48 @@ object LogService {
         }
 
         return lista
+    }
+
+    // =========================
+    // 📄 XML + XSLT
+    // =========================
+    private fun guardarEnXML(log: LogEvento) {
+        if (!xmlFile.exists()) {
+            xmlFile.parentFile.mkdirs()
+            xmlFile.writeText("<logs></logs>")
+        }
+
+        val xml = xmlFile.readText()
+
+        val nuevo = """
+            <log>
+                <usuario>${log.usuario}</usuario>
+                <evento>${log.evento}</evento>
+                <estimulo>${log.estimulo}</estimulo>
+                <tiempo>${log.tiempoReaccionMs}</tiempo>
+            </log>
+        """.trimIndent()
+
+        val actualizado = xml.replace("</logs>", "$nuevo</logs>")
+        xmlFile.writeText(actualizado)
+    }
+
+    // =========================
+    // 📄 INFORME HTML (XSLT)
+    // =========================
+    fun generarInformeHtml() {
+
+        val outputFile = File("informe_resultados.html")
+
+        if (xmlFile.exists() && xsltFile.exists()) {
+
+            val transformer = TransformerFactory.newInstance()
+                .newTransformer(javax.xml.transform.stream.StreamSource(xsltFile))
+
+            transformer.transform(
+                javax.xml.transform.stream.StreamSource(xmlFile),
+                StreamResult(outputFile)
+            )
+        }
     }
 }
